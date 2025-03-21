@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package user;
+
+option go_package = "proto/pb;user";
+
+// User message definition
+message User {
+  string id = 1;          // User ID
+  string name = 2;        // User name
+  string email = 3;       // User email
+  string password = 4;    // User password (hashed for storage)
+  string role = 5;        // User role (e.g., "customer", "vendor", "admin")
+}
+
+// Request for AddUser
+message AddUserRequest {
+  string name = 1;        // User name
+  string email = 2;       // User email
+  string password = 3;    // User password
+}
+
+// Response for AddUser
+message AddUserResponse {
+  User user = 1;          // The created user object
+}
+
+// Request for UpdateUser
+message UpdateUserRequest {
+  User user = 1;          // Updated user object
+}
+
+// Response for UpdateUser
+message UpdateUserResponse {
+  User user = 1;          // The updated user object
+}
+
+// Request for PromoteUser
+message PromoteUserRequest {
+  string username = 1;    // Username to promote
+}
+
+// Response for PromoteUser
+message PromoteUserResponse {
+  string message = 1;     // Success message
+}
+
+// Request for GetUser
+message GetUserRequest {
+  string username = 1;    // Username to retrieve
+}
+
+// Response for GetUser
+message GetUserResponse {
+  User user = 1;          // User object
+}
+
+// Request for GetAllUsers
+message GetAllUsersRequest {}
+
+// Response for GetAllUsers
+message GetAllUsersResponse {
+  repeated User users = 1; // List of all users
+}
+
+// UserService definition
+service UserService {
+  // Add a new user
+  rpc AddUser(AddUserRequest) returns (AddUserResponse);
+
+  // Update an existing user
+  rpc UpdateUser(UpdateUserRequest) returns (UpdateUserResponse);
+
+  // Promote a user to admin
+  rpc PromoteUser(PromoteUserRequest) returns (PromoteUserResponse);
+
+  // Get a single user by username
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+
+  // Get all users
+  rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+}

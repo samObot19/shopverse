@@ -1,0 +1,64 @@
+type User {
+  id: String
+  name: String
+  email: String
+  password: String
+  role: String
+}
+
+type Query {
+  getUser(username: String!): User
+  getAllUsers: [User!]
+  getProductByID(id: ID!): Product
+  getAllProducts(filters: [FilterInput!]): [Product!]!
+  getProductsByCategory(category: String!): [Product!]!
+  searchProducts(query: String!): [Product!]!
+}
+
+type Mutation {
+  addUser(name: String!, email: String!, password: String!): User
+  promoteUser(username: String!): String
+  createProduct(input: ProductInput!): String!
+  updateProduct(id: ID!, input: ProductInput!): String!
+  deleteProduct(id: ID!): String!
+  updateStock(id: ID!, quantity: Int!): String!
+}
+
+type Product {
+    id: ID!
+    title: String!
+    description: String!
+    price: Float!
+    stock: Int!
+    category: String!
+    attributes: ProductAttributes!
+    images: [String!]!
+    ratings: Float!
+    createdAt: String!
+}
+
+type ProductAttributes {
+    color: String!
+    size: String!
+}
+
+input ProductInput {
+    title: String!
+    description: String!
+    price: Float!
+    stock: Int!
+    category: String!
+    attributes: ProductAttributesInput!
+    images: [String!]!
+    ratings: Float!
+}
+
+input ProductAttributesInput {
+    color: String!
+    size: String!
+}
+
+input FilterInput {
+    key: String!
+    value: String!
+}
