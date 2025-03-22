@@ -1,7 +1,7 @@
 package models
 
 import "time"
-
+// 
 type Order struct {
     ID             uint      `json:"id"`
     UserID         uint      `json:"user_id"`
@@ -19,7 +19,6 @@ type OrderItem struct {
     ID           uint    `json:"id"`
     OrderID      uint    `json:"order_id"`
     ProductID    uint    `json:"product_id"`
-    ProductName  string  `json:"product_name"`
     ProductPrice float64 `json:"product_price"`
     Quantity     int     `json:"quantity"`
     TotalPrice   float64 `json:"total_price"`
