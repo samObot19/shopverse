@@ -13,6 +13,8 @@ type Query {
   getAllProducts(filters: [FilterInput!]): [Product!]!
   getProductsByCategory(category: String!): [Product!]!
   searchProducts(query: String!): [Product!]!
+  getOrderByID(orderID: ID!): Order
+  getAllOrders(userID: ID!): [Order!]!
 }
 
 type Mutation {
@@ -22,43 +24,82 @@ type Mutation {
   updateProduct(id: ID!, input: ProductInput!): String!
   deleteProduct(id: ID!): String!
   updateStock(id: ID!, quantity: Int!): String!
+  createOrder(input: OrderInput!): String!
+  updateOrderStatus(orderID: ID!, status: String!): String!
+  updatePaymentStatus(orderID: ID!, paymentStatus: String!): String!
+  deleteOrder(orderID: ID!): String!
 }
 
 type Product {
-    id: ID!
-    title: String!
-    description: String!
-    price: Float!
-    stock: Int!
-    category: String!
-    attributes: ProductAttributes!
-    images: [String!]!
-    ratings: Float!
-    createdAt: String!
+  id: ID!
+  title: String!
+  description: String!
+  price: Float!
+  stock: Int!
+  category: String!
+  attributes: ProductAttributes!
+  images: [String!]!
+  ratings: Float!
+  createdAt: String!
 }
 
 type ProductAttributes {
-    color: String!
-    size: String!
+  color: String!
+  size: String!
 }
 
 input ProductInput {
-    title: String!
-    description: String!
-    price: Float!
-    stock: Int!
-    category: String!
-    attributes: ProductAttributesInput!
-    images: [String!]!
-    ratings: Float!
+  title: String!
+  description: String!
+  price: Float!
+  stock: Int!
+  category: String!
+  attributes: ProductAttributesInput!
+  images: [String!]!
+  ratings: Float!
 }
 
 input ProductAttributesInput {
-    color: String!
-    size: String!
+  color: String!
+  size: String!
 }
 
 input FilterInput {
-    key: String!
-    value: String!
+  key: String!
+  value: String!
+}
+
+type Order {
+  id: ID!
+  userID: ID!
+  orderStatus: String!
+  paymentStatus: String!
+  totalAmount: Float!
+  shippingAddress: String!
+  billingAddress: String!
+  createdAt: String!
+  updatedAt: String!
+  items: [OrderItem!]!
+}
+
+type OrderItem {
+  id: ID!
+  productID: ID!
+  productPrice: Float!
+  quantity: Int!
+  totalPrice: Float!
+}
+
+input OrderInput {
+  userID: ID!
+  items: [OrderItemInput!]!
+  shippingAddress: String!
+  billingAddress: String!
+}
+
+input OrderItemInput {
+  productID: ID!
+  productPrice: Float!
+  quantity: Int!
+  totalPrice: Float!
 }

@@ -10,6 +10,41 @@ type FilterInput struct {
 type Mutation struct {
 }
 
+type Order struct {
+	ID              string       `json:"id"`
+	UserID          string       `json:"userID"`
+	OrderStatus     string       `json:"orderStatus"`
+	PaymentStatus   string       `json:"paymentStatus"`
+	TotalAmount     float64      `json:"totalAmount"`
+	ShippingAddress string       `json:"shippingAddress"`
+	BillingAddress  string       `json:"billingAddress"`
+	CreatedAt       string       `json:"createdAt"`
+	UpdatedAt       string       `json:"updatedAt"`
+	Items           []*OrderItem `json:"items"`
+}
+
+type OrderInput struct {
+	UserID          string            `json:"userID"`
+	Items           []*OrderItemInput `json:"items"`
+	ShippingAddress string            `json:"shippingAddress"`
+	BillingAddress  string            `json:"billingAddress"`
+}
+
+type OrderItem struct {
+	ID           string  `json:"id"`
+	ProductID    string  `json:"productID"`
+	ProductPrice float64 `json:"productPrice"`
+	Quantity     int32   `json:"quantity"`
+	TotalPrice   float64 `json:"totalPrice"`
+}
+
+type OrderItemInput struct {
+	ProductID    string  `json:"productID"`
+	ProductPrice float64 `json:"productPrice"`
+	Quantity     int32   `json:"quantity"`
+	TotalPrice   float64 `json:"totalPrice"`
+}
+
 type Product struct {
 	ID          string             `json:"id"`
 	Title       string             `json:"title"`

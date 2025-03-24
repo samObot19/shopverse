@@ -9,10 +9,12 @@ import (
 	"fmt"
 	"log"
 	"time"
+	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/samObot19/shopverse/api-gate-way/graph/model"
 	productclient "github.com/samObot19/shopverse/api-gate-way/product-client"
+	"github.com/samObot19/shopverse/api-gate-way/order-client/proto/pb"
 )
 
 // AddUser is the resolver for the addUser mutation.
@@ -79,8 +81,8 @@ func (r *mutationResolver) UpdateProduct(ctx context.Context, id string, input m
 			Color: input.Attributes.Color,
 			Size:  input.Attributes.Size,
 		},
-		Images:    input.Images,
-		Ratings:   input.Ratings,
+		Images:  input.Images,
+		Ratings: input.Ratings,
 	}
 	err := r.Resolver.ProductClient.UpdateProduct(ctx, id, productclient.ToProtoProduct(product))
 	if err != nil {
@@ -108,6 +110,94 @@ func (r *mutationResolver) UpdateStock(ctx context.Context, id string, quantity 
 		return "", fmt.Errorf("failed to update stock: %w", err)
 	}
 	return "Stock updated successfully", nil
+}
+
+// CreateOrder is the resolver for the createOrder mutation.
+func (r *mutationResolver) CreateOrder(ctx context.Context, input model.OrderInput) (string, error) {
+	orderItems := []*pb.OrderItem{}
+	for _, item := range input.Items {
+		orderItems = append(orderItems, &pb.OrderItem{
+			ProductId: func() uint32 {
+				id, err := strconv.ParseUint(item.ProductID, 10, 32)
+				if err != nil {
+					log.Printf("Error parsing ProductID to uint32: %v", err)
+					return 0
+				}
+				return uint32(id)
+			}(),
+			ProductPrice: float32(item.ProductPrice),
+			Quantity:     uint32(item.Quantity),
+			TotalPrice:   float32(item.TotalPrice),
+		})
+	}
+
+	userIDUint, err := strconv.ParseUint(input.UserID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing UserID to uint32: %v", err)
+		return "", fmt.Errorf("invalid UserID format: %w", err)
+	}
+
+	protoOrderItems := []*pb.OrderItem{}
+	for _, item := range orderItems {
+		protoOrderItems = append(protoOrderItems, &pb.OrderItem{
+			ProductId:    item.ProductId,
+			ProductPrice: float32(item.ProductPrice),
+			Quantity:     uint32(item.Quantity),
+			TotalPrice:   item.TotalPrice,
+		})
+	}
+
+	resp, err := r.Resolver.OrderClient.CreateOrder(ctx, uint32(userIDUint), protoOrderItems, input.ShippingAddress, input.BillingAddress)
+	if err != nil {
+		log.Printf("Error creating order: %v", err)
+		return "", fmt.Errorf("failed to create order: %w", err)
+	}
+	return fmt.Sprintf("Order created successfully with ID: %d", resp.OrderId), nil
+}
+
+// UpdateOrderStatus is the resolver for the updateOrderStatus mutation.
+func (r *mutationResolver) UpdateOrderStatus(ctx context.Context, orderID string, status string) (string, error) {
+	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing orderID to uint32: %v", err)
+		return "", fmt.Errorf("invalid orderID format: %w", err)
+	}
+	resp, err := r.Resolver.OrderClient.UpdateOrderStatus(ctx, uint32(orderIDUint), status)
+	if err != nil {
+		log.Printf("Error updating order status: %v", err)
+		return "", fmt.Errorf("failed to update order status: %w", err)
+	}
+	return resp.Message, nil
+}
+
+// UpdatePaymentStatus is the resolver for the updatePaymentStatus mutation.
+func (r *mutationResolver) UpdatePaymentStatus(ctx context.Context, orderID string, paymentStatus string) (string, error) {
+	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing orderID to uint32: %v", err)
+		return "", fmt.Errorf("invalid orderID format: %w", err)
+	}
+	resp, err := r.Resolver.OrderClient.UpdatePaymentStatus(ctx, uint32(orderIDUint), paymentStatus)
+	if err != nil {
+		log.Printf("Error updating payment status: %v", err)
+		return "", fmt.Errorf("failed to update payment status: %w", err)
+	}
+	return resp.Message, nil
+}
+
+// DeleteOrder is the resolver for the deleteOrder mutation.
+func (r *mutationResolver) DeleteOrder(ctx context.Context, orderID string) (string, error) {
+	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing orderID to uint32: %v", err)
+		return "", fmt.Errorf("invalid orderID format: %w", err)
+	}
+	resp, err := r.Resolver.OrderClient.DeleteOrder(ctx, uint32(orderIDUint))
+	if err != nil {
+		log.Printf("Error deleting order: %v", err)
+		return "", fmt.Errorf("failed to delete order: %w", err)
+	}
+	return resp.Message, nil
 }
 
 // GetUser is the resolver for the getUser query.
@@ -202,6 +292,86 @@ func (r *queryResolver) SearchProducts(ctx context.Context, query string) ([]*mo
 	return products, nil
 }
 
+// GetOrderByID is the resolver for the getOrderByID query.
+func (r *queryResolver) GetOrderByID(ctx context.Context, orderID string) (*model.Order, error) {
+	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing orderID to uint32: %v", err)
+		return nil, fmt.Errorf("invalid orderID format: %w", err)
+	}
+	order, err := r.Resolver.OrderClient.GetOrderByID(ctx, uint32(orderIDUint))
+	if err != nil {
+		log.Printf("Error fetching order by ID: %v", err)
+		return nil, fmt.Errorf("failed to fetch order: %w", err)
+	}
+
+	orderItems := []*model.OrderItem{}
+	for _, item := range order.Items {
+		orderItems = append(orderItems, &model.OrderItem{
+			ID:          fmt.Sprintf("%d", item.Id),
+			ProductID:   fmt.Sprintf("%d", item.ProductId),
+			ProductPrice: float64(item.ProductPrice),
+			Quantity:    int32(item.Quantity),
+			TotalPrice:  float64(item.TotalPrice),
+		})
+	}
+
+	return &model.Order{
+		ID:             fmt.Sprintf("%d", order.Id),
+		UserID:         fmt.Sprintf("%d", order.UserId),
+		OrderStatus:    order.OrderStatus,
+		PaymentStatus:  order.PaymentStatus,
+		TotalAmount:    float64(order.TotalAmount),
+		ShippingAddress: order.ShippingAddress,
+		BillingAddress: order.BillingAddress,
+		CreatedAt:      order.CreatedAt,
+		UpdatedAt:      order.UpdatedAt,
+		Items:          orderItems,
+	}, nil
+}
+
+// GetAllOrders is the resolver for the getAllOrders query.
+func (r *queryResolver) GetAllOrders(ctx context.Context, userID string) ([]*model.Order, error) {
+	userIDUint, err := strconv.ParseUint(userID, 10, 32)
+	if err != nil {
+		log.Printf("Error parsing userID to uint32: %v", err)
+		return nil, fmt.Errorf("invalid userID format: %w", err)
+	}
+	orders, err := r.Resolver.OrderClient.GetAllOrders(ctx, uint32(userIDUint))
+	if err != nil {
+		log.Printf("Error fetching all orders: %v", err)
+		return nil, fmt.Errorf("failed to fetch all orders: %w", err)
+	}
+
+	var result []*model.Order
+	for _, order := range orders {
+		orderItems := []*model.OrderItem{}
+		for _, item := range order.Items {
+			orderItems = append(orderItems, &model.OrderItem{
+				ID:          fmt.Sprintf("%d", item.Id),
+				ProductID:   fmt.Sprintf("%d", item.ProductId),
+				ProductPrice: float64(item.ProductPrice),
+				Quantity:    int32(item.Quantity),
+				TotalPrice:  float64(item.TotalPrice),
+			})
+		}
+
+		result = append(result, &model.Order{
+			ID:             fmt.Sprintf("%d", order.Id),
+			UserID:         fmt.Sprintf("%d", order.UserId),
+			OrderStatus:    order.OrderStatus,
+			PaymentStatus:  order.PaymentStatus,
+			TotalAmount:    float64(order.TotalAmount),
+			ShippingAddress: order.ShippingAddress,
+			BillingAddress: order.BillingAddress,
+			CreatedAt:      order.CreatedAt,
+			UpdatedAt:      order.UpdatedAt,
+			Items:          orderItems,
+		})
+	}
+	return result, nil
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
@@ -210,3 +380,4 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+

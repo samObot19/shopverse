@@ -11,12 +11,14 @@ import (
 	//"github.com/samObot19/shopverse/api-gate-way/graph/generated"
 	"github.com/samObot19/shopverse/api-gate-way/product-client"
 	"github.com/samObot19/shopverse/api-gate-way/user-client"
+	orderclient "github.com/samObot19/shopverse/api-gate-way/order-client"
 	"google.golang.org/grpc"
 )
 
 const (
 	defaultPort          = "8080"
 	productServiceAddress = "localhost:50055" // Replace with actual product service address
+	orderServiceAddress   = "localhost:50051" // Replace with actual order service address
 )
 
 func main() {
@@ -45,10 +47,21 @@ func main() {
 	// Initialize the ProductClient
 	productClient := productclient.NewProductClient(productConn)
 
-	// Initialize the Resolver with the ProductClient
+	// Connect to the order service
+	orderConn, err := orderclient.ConnectToOrderService(orderServiceAddress)
+	if err != nil {
+		log.Fatalf("Failed to connect to order service: %v", err)
+	}
+	defer orderConn.Close()
+
+	// Initialize the OrderClient
+	orderClient := orderclient.NewOrderClient(orderConn)
+
+	// Initialize the Resolver with the OrderClient
 	resolver := &graph.Resolver{
 		ProductClient: productClient,
 		UserClient:    userClient,
+		OrderClient:   orderClient, // Added OrderClient
 	}
 
 	// Create the GraphQL server
