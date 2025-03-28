@@ -3,7 +3,9 @@ module github.com/samObot19/shopverse/order-service
 go 1.22.5
 
 require (
+	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/go-sql-driver/mysql v1.9.1
+	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.5

@@ -2,7 +2,6 @@ package main
 
 import (
     "log"
-
     "github.com/samObot19/shopverse/order-service/internal/config"
     //"order-service/internal/events"
     "github.com/samObot19/shopverse/order-service/internal/repository"
