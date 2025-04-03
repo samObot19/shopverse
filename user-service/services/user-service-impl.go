@@ -5,6 +5,7 @@ import (
     "errors"
     "log"
 
+    "go.mongodb.org/mongo-driver/bson/primitive"
     "github.com/samObot19/shopverse/user-service/models"
     pb "github.com/samObot19/shopverse/user-service/proto/pb"
     "github.com/samObot19/shopverse/user-service/usecases"
@@ -18,62 +19,146 @@ type UserServiceImpl struct {
 
 func (s *UserServiceImpl) AddUser(ctx context.Context, req *pb.AddUserRequest) (*pb.AddUserResponse, error) {
     user := &models.User{
-        Name:     req.Name,
-        Email:    req.Email,
-        Password: req.Password,
-        Role:     "customer", // Default role
+        GoogleID:       req.GoogleId,
+        Name:           req.Name,
+        Email:          req.Email,
+        Password:       req.Password,
+        ProfilePicture: req.ProfilePicture,
+        Role:           "customer", 
     }
 
-    // Call the usecase to add the user
     err := s.UserUsecase.AddUser(user)
     if err != nil {
         log.Printf("Error adding user: %v", err)
         return nil, errors.New("failed to add user")
     }
 
-    // Return the created user
     return &pb.AddUserResponse{
         User: &pb.User{
-            Id:       "", // MongoDB will generate the ID
-            Name:     user.Name,
-            Email:    user.Email,
-            Password: user.Password,
-            Role:     user.Role,
+            Id:             user.ID.Hex(),
+            GoogleId:       user.GoogleID,
+            Name:           user.Name,
+            Email:          user.Email,
+            Password:       user.Password,
+            ProfilePicture: user.ProfilePicture,
+            Role:           user.Role,
         },
     }, nil
 }
 
-// UpdateUser updates an existing user's details
+
 func (s *UserServiceImpl) UpdateUser(ctx context.Context, req *pb.UpdateUserRequest) (*pb.UpdateUserResponse, error) {
-    updatedUser := &models.User{
-        Name:     req.User.Name,
-        Email:    req.User.Email,
-        Password: req.User.Password,
-        Role:     req.User.Role,
+    objectID, err := primitive.ObjectIDFromHex(req.User.Id)
+    if err != nil {
+        log.Printf("Invalid ObjectID: %v", err)
+        return nil, errors.New("invalid user ID")
     }
 
-    // Call the usecase to update the user
+    updatedUser := &models.User{
+        ID:             objectID,
+        GoogleID:       req.User.GoogleId,
+        Name:           req.User.Name,
+        Email:          req.User.Email,
+        Password:       req.User.Password,
+        ProfilePicture: req.User.ProfilePicture,
+        Role:           req.User.Role,
+    }
+
     user, err := s.UserUsecase.UpdateUser(&req.User.Id, updatedUser)
     if err != nil {
         log.Printf("Error updating user: %v", err)
         return nil, errors.New("failed to update user")
     }
 
-    // Return the updated user
     return &pb.UpdateUserResponse{
         User: &pb.User{
-            Id:       user.ID,
-            Name:     user.Name,
-            Email:    user.Email,
-            Password: user.Password,
-            Role:     user.Role,
+            Id:             user.ID.Hex(),
+            GoogleId:       user.GoogleID,
+            Name:           user.Name,
+            Email:          user.Email,
+            Password:       user.Password,
+            ProfilePicture: user.ProfilePicture,
+            Role:           user.Role,
         },
     }, nil
 }
 
-// PromoteUser promotes a user to admin
+func (s *UserServiceImpl) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
+    user, err := s.UserUsecase.GetUser(&req.Username)
+
+    if err != nil {
+        log.Printf("User not found: %v", req.Username)
+        return nil, errors.New("user not found")
+    }
+
+    return &pb.GetUserResponse{
+        User: &pb.User{
+            Id:             user.ID.Hex(),
+            GoogleId:       user.GoogleID,
+            Name:           user.Name,
+            Email:          user.Email,
+            Password:       user.Password,
+            ProfilePicture: user.ProfilePicture,
+            Role:           user.Role,
+        },
+    }, nil
+}
+
+
+func (s *UserServiceImpl) GetUserByID(ctx context.Context, req *pb.GetUserByIDRequest) (*pb.GetUserByIDResponse, error) {
+    objectID, err := primitive.ObjectIDFromHex(req.Id)
+    if err != nil {
+        log.Printf("Invalid ObjectID: %v", err)
+        return nil, errors.New("invalid user ID")
+    }
+
+    user, err := s.UserUsecase.GetUserByID(objectID.Hex())
+    if err != nil {
+        log.Printf("User not found: %v", err)
+        return nil, errors.New("user not found")
+    }
+
+    return &pb.GetUserByIDResponse{
+        User: &pb.User{
+            Id:             user.ID.Hex(),
+            GoogleId:       user.GoogleID,
+            Name:           user.Name,
+            Email:          user.Email,
+            Password:       user.Password,
+            ProfilePicture: user.ProfilePicture,
+            Role:           user.Role,
+        },
+    }, nil
+}
+
+
+func (s *UserServiceImpl) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
+    users, err := s.UserUsecase.GetAllUsers()
+    if err != nil {
+        log.Printf("Error retrieving users: %v", err)
+        return nil, errors.New("failed to retrieve users")
+    }
+
+    var pbUsers []*pb.User
+    for _, user := range users {
+        pbUsers = append(pbUsers, &pb.User{
+            Id:             user.ID.Hex(),
+            GoogleId:       user.GoogleID,
+            Name:           user.Name,
+            Email:          user.Email,
+            Password:       user.Password,
+            ProfilePicture: user.ProfilePicture,
+            Role:           user.Role,
+        })
+    }
+
+    return &pb.GetAllUsersResponse{
+        Users: pbUsers,
+    }, nil
+}
+
+
 func (s *UserServiceImpl) PromoteUser(ctx context.Context, req *pb.PromoteUserRequest) (*pb.PromoteUserResponse, error) {
-    // Call the usecase to promote the user
     err := s.UserUsecase.PromoteUser(req.Username)
     if err != nil {
         log.Printf("Error promoting user: %v", err)
@@ -82,53 +167,5 @@ func (s *UserServiceImpl) PromoteUser(ctx context.Context, req *pb.PromoteUserRe
 
     return &pb.PromoteUserResponse{
         Message: "User promoted to admin successfully",
-    }, nil
-}
-
-// GetUser retrieves a user by username
-func (s *UserServiceImpl) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
-    // Call the usecase to get the user
-    user, err := s.UserUsecase.GetUser(&req.Username)
-    if err != nil {
-        log.Printf("User not found: %s", req.Username)
-        return nil, errors.New("user not found")
-    }
-
-    // Return the user
-    return &pb.GetUserResponse{
-        User: &pb.User{
-            Id:       user.ID,
-            Name:     user.Name,
-            Email:    user.Email,
-            Password: user.Password,
-            Role:     user.Role,
-        },
-    }, nil
-}
-
-// GetAllUsers retrieves all users
-func (s *UserServiceImpl) GetAllUsers(ctx context.Context, req *pb.GetAllUsersRequest) (*pb.GetAllUsersResponse, error) {
-    // Call the usecase to get all users
-    users, err := s.UserUsecase.GetAllUsers()
-    if err != nil {
-        log.Printf("Error retrieving users: %v", err)
-        return nil, errors.New("failed to retrieve users")
-    }
-
-    // Convert users to protobuf format
-    var pbUsers []*pb.User
-    for _, user := range users {
-        pbUsers = append(pbUsers, &pb.User{
-            Id:       user.ID,
-            Name:     user.Name,
-            Email:    user.Email,
-            Password: user.Password,
-            Role:     user.Role,
-        })
-    }
-
-    // Return the list of users
-    return &pb.GetAllUsersResponse{
-        Users: pbUsers,
     }, nil
 }

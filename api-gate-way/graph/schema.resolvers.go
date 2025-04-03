@@ -17,23 +17,23 @@ import (
 	"github.com/samObot19/shopverse/api-gate-way/order-client/proto/pb"
 )
 
-// AddUser is the resolver for the addUser mutation.
+
 func (r *mutationResolver) AddUser(ctx context.Context, name string, email string, password string) (*model.User, error) {
-	resp, err := r.Resolver.UserClient.AddUser(ctx, name, email, password)
-	if err != nil {
-		log.Printf("Error adding user: %v", err)
-		return nil, fmt.Errorf("failed to add user: %w", err)
-	}
+	// resp, err := r.Resolver.UserClient.AddUser(ctx, name, email, password)
+	// if err != nil {
+	// 	log.Printf("Error adding user: %v", err)
+	// 	return nil, fmt.Errorf("failed to add user: %w", err)
+	// }
 	return &model.User{
-		ID:       &resp.User.Id,
-		Name:     &resp.User.Name,
-		Email:    &resp.User.Email,
-		Password: &resp.User.Password,
-		Role:     &resp.User.Role,
+		// ID:       &resp.User.Id,
+		// Name:     &resp.User.Name,
+		// Email:    &resp.User.Email,
+		// Password: &resp.User.Password,
+		// Role:     &resp.User.Role,
 	}, nil
 }
 
-// PromoteUser is the resolver for the promoteUser mutation.
+
 func (r *mutationResolver) PromoteUser(ctx context.Context, username string) (*string, error) {
 	resp, err := r.Resolver.UserClient.PromoteUser(ctx, username)
 	if err != nil {
@@ -44,10 +44,10 @@ func (r *mutationResolver) PromoteUser(ctx context.Context, username string) (*s
 	return &message, nil
 }
 
-// CreateProduct is the resolver for the createProduct mutation.
+
 func (r *mutationResolver) CreateProduct(ctx context.Context, input model.ProductInput) (string, error) {
 	product := &model.Product{
-		ID:          uuid.New().String(), // Generate a unique ID
+		ID:          uuid.New().String(), 
 		Title:       input.Title,
 		Description: input.Description,
 		Price:       input.Price,
@@ -59,7 +59,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Produc
 		},
 		Images:    input.Images,
 		Ratings:   input.Ratings,
-		CreatedAt: time.Now().Format(time.RFC3339), // Set current timestamp
+		CreatedAt: time.Now().Format(time.RFC3339), 
 	}
 	err := r.Resolver.ProductClient.CreateProduct(ctx, productclient.ToProtoProduct(product))
 	if err != nil {
@@ -69,7 +69,7 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Produc
 	return "Product created successfully", nil
 }
 
-// UpdateProduct is the resolver for the updateProduct mutation.
+
 func (r *mutationResolver) UpdateProduct(ctx context.Context, id string, input model.ProductInput) (string, error) {
 	product := &model.Product{
 		Title:       input.Title,
@@ -92,7 +92,6 @@ func (r *mutationResolver) UpdateProduct(ctx context.Context, id string, input m
 	return "Product updated successfully", nil
 }
 
-// DeleteProduct is the resolver for the deleteProduct mutation.
 func (r *mutationResolver) DeleteProduct(ctx context.Context, id string) (string, error) {
 	err := r.Resolver.ProductClient.DeleteProduct(ctx, id)
 	if err != nil {
@@ -102,7 +101,7 @@ func (r *mutationResolver) DeleteProduct(ctx context.Context, id string) (string
 	return "Product deleted successfully", nil
 }
 
-// UpdateStock is the resolver for the updateStock mutation.
+
 func (r *mutationResolver) UpdateStock(ctx context.Context, id string, quantity int32) (string, error) {
 	err := r.Resolver.ProductClient.UpdateStock(ctx, id, quantity)
 	if err != nil {
@@ -112,7 +111,7 @@ func (r *mutationResolver) UpdateStock(ctx context.Context, id string, quantity 
 	return "Stock updated successfully", nil
 }
 
-// CreateOrder is the resolver for the createOrder mutation.
+
 func (r *mutationResolver) CreateOrder(ctx context.Context, input model.OrderInput) (string, error) {
 	orderItems := []*pb.OrderItem{}
 	for _, item := range input.Items {
@@ -170,7 +169,7 @@ func (r *mutationResolver) UpdateOrderStatus(ctx context.Context, orderID string
 	return resp.Message, nil
 }
 
-// UpdatePaymentStatus is the resolver for the updatePaymentStatus mutation.
+
 func (r *mutationResolver) UpdatePaymentStatus(ctx context.Context, orderID string, paymentStatus string) (string, error) {
 	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
 	if err != nil {
@@ -185,7 +184,6 @@ func (r *mutationResolver) UpdatePaymentStatus(ctx context.Context, orderID stri
 	return resp.Message, nil
 }
 
-// DeleteOrder is the resolver for the deleteOrder mutation.
 func (r *mutationResolver) DeleteOrder(ctx context.Context, orderID string) (string, error) {
 	orderIDUint, err := strconv.ParseUint(orderID, 10, 32)
 	if err != nil {
@@ -200,7 +198,7 @@ func (r *mutationResolver) DeleteOrder(ctx context.Context, orderID string) (str
 	return resp.Message, nil
 }
 
-// GetUser is the resolver for the getUser query.
+
 func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.User, error) {
 	resp, err := r.Resolver.UserClient.GetUser(ctx, username)
 	if err != nil {
@@ -216,7 +214,7 @@ func (r *queryResolver) GetUser(ctx context.Context, username string) (*model.Us
 	}, nil
 }
 
-// GetAllUsers is the resolver for the getAllUsers query.
+
 func (r *queryResolver) GetAllUsers(ctx context.Context) ([]*model.User, error) {
 	resp, err := r.Resolver.UserClient.GetAllUsers(ctx)
 	if err != nil {
@@ -236,7 +234,6 @@ func (r *queryResolver) GetAllUsers(ctx context.Context) ([]*model.User, error) 
 	return users, nil
 }
 
-// GetProductByID is the resolver for the getProductByID query.
 func (r *queryResolver) GetProductByID(ctx context.Context, id string) (*model.Product, error) {
 	protoProduct, err := r.Resolver.ProductClient.GetProductByID(ctx, id)
 	if err != nil {
@@ -246,7 +243,7 @@ func (r *queryResolver) GetProductByID(ctx context.Context, id string) (*model.P
 	return productclient.FromProtoProduct(protoProduct), nil
 }
 
-// GetAllProducts is the resolver for the getAllProducts query.
+
 func (r *queryResolver) GetAllProducts(ctx context.Context, filters []*model.FilterInput) ([]*model.Product, error) {
 	filterMap := make(map[string]string)
 	for _, filter := range filters {

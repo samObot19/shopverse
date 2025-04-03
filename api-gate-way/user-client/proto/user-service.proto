@@ -6,53 +6,67 @@ option go_package = "proto/pb;user";
 
 // User message definition
 message User {
-  string id = 1;          // User ID
-  string name = 2;        // User name
-  string email = 3;       // User email
-  string password = 4;    // User password (hashed for storage)
-  string role = 5;        // User role (e.g., "customer", "vendor", "admin")
+  string id = 1;               // User ID
+  string google_id = 2;        // Google unique user ID
+  string name = 3;             // User name
+  string email = 4;            // User email
+  string password = 5;         // User password (optional, for fallback authentication)
+  string profile_picture = 6;  // URL to the user's profile picture
+  string role = 7;             // User role (e.g., "customer", "admin")
 }
 
 // Request for AddUser
 message AddUserRequest {
-  string name = 1;        // User name
-  string email = 2;       // User email
-  string password = 3;    // User password
+  string google_id = 1;        // Google unique user ID
+  string name = 2;             // User name
+  string email = 3;            // User email
+  string password = 4;         // User password (optional)
+  string profile_picture = 5;  // URL to the user's profile picture
 }
 
 // Response for AddUser
 message AddUserResponse {
-  User user = 1;          // The created user object
+  User user = 1;               // The created user object
+}
+
+// Request for GetUserByID
+message GetUserByIDRequest {
+  string id = 1;               // User ID
+}
+
+// Response for GetUserByID
+message GetUserByIDResponse {
+  User user = 1;               // The retrieved user object
 }
 
 // Request for UpdateUser
 message UpdateUserRequest {
-  User user = 1;          // Updated user object
+  User user = 1;               // Updated user object
 }
 
 // Response for UpdateUser
 message UpdateUserResponse {
-  User user = 1;          // The updated user object
+  User user = 1;               // The updated user object
 }
 
 // Request for PromoteUser
 message PromoteUserRequest {
-  string username = 1;    // Username to promote
+  string username = 1;         // Username to promote
 }
 
 // Response for PromoteUser
 message PromoteUserResponse {
-  string message = 1;     // Success message
+  string message = 1;          // Success message
 }
 
 // Request for GetUser
 message GetUserRequest {
-  string username = 1;    // Username to retrieve
+  string username = 1;         // Username to retrieve
 }
 
 // Response for GetUser
 message GetUserResponse {
-  User user = 1;          // User object
+  User user = 1;               // User object
 }
 
 // Request for GetAllUsers
@@ -60,7 +74,7 @@ message GetAllUsersRequest {}
 
 // Response for GetAllUsers
 message GetAllUsersResponse {
-  repeated User users = 1; // List of all users
+  repeated User users = 1;     // List of all users
 }
 
 // UserService definition
@@ -79,4 +93,7 @@ service UserService {
 
   // Get all users
   rpc GetAllUsers(GetAllUsersRequest) returns (GetAllUsersResponse);
+
+  // Get a single user by ID
+  rpc GetUserByID(GetUserByIDRequest) returns (GetUserByIDResponse);
 }

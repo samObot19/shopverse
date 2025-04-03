@@ -7,68 +7,77 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/joho/godotenv"
+	"github.com/samObot19/shopverse/api-gate-way/authenticate"
 	"github.com/samObot19/shopverse/api-gate-way/graph"
-	//"github.com/samObot19/shopverse/api-gate-way/graph/generated"
 	"github.com/samObot19/shopverse/api-gate-way/product-client"
-	"github.com/samObot19/shopverse/api-gate-way/user-client"
+	userclient "github.com/samObot19/shopverse/api-gate-way/user-client"
 	orderclient "github.com/samObot19/shopverse/api-gate-way/order-client"
-	"google.golang.org/grpc"
 )
 
-const (
-	defaultPort          = "8080"
-	productServiceAddress = "localhost:50055" // Replace with actual product service address
-	orderServiceAddress   = "localhost:50051" // Replace with actual order service address
-)
+func init() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("No .env file found or error loading it: %v", err)
+	}
+}
 
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = defaultPort
+		port = "8080"
 	}
 
-	// Initialize gRPC connection
-	conn, err := grpc.Dial("localhost:50500", grpc.WithInsecure())
+	userServiceAddress := os.Getenv("USER_SERVICE_ADDRESS")
+	if userServiceAddress == "" {
+		log.Fatal("USER_SERVICE_ADDRESS not set in .env")
+	}
+
+	productServiceAddress := os.Getenv("PRODUCT_SERVICE_ADDRESS")
+	if productServiceAddress == "" {
+		log.Fatal("PRODUCT_SERVICE_ADDRESS not set in .env")
+	}
+
+	orderServiceAddress := os.Getenv("ORDER_SERVICE_ADDRESS")
+	if orderServiceAddress == "" {
+		log.Fatal("ORDER_SERVICE_ADDRESS not set in .env")
+	}
+
+	userConn, err := userclient.ConnectToUserService(userServiceAddress)
 	if err != nil {
-		log.Fatalf("Failed to connect to gRPC server: %v", err)
+		log.Fatalf("Failed to connect to user service: %v", err)
 	}
-	defer conn.Close()
+	defer userConn.Close()
+	userClient := userclient.NewUserClient(userConn)
 
-	// Initialize UserClient
-	userClient := user_client.NewUserClient(conn)
-
-	// Connect to the product service
 	productConn, err := productclient.ConnectToProductService(productServiceAddress)
 	if err != nil {
 		log.Fatalf("Failed to connect to product service: %v", err)
 	}
 	defer productConn.Close()
-
-	// Initialize the ProductClient
 	productClient := productclient.NewProductClient(productConn)
 
-	// Connect to the order service
 	orderConn, err := orderclient.ConnectToOrderService(orderServiceAddress)
 	if err != nil {
 		log.Fatalf("Failed to connect to order service: %v", err)
 	}
 	defer orderConn.Close()
-
-	// Initialize the OrderClient
 	orderClient := orderclient.NewOrderClient(orderConn)
 
-	// Initialize the Resolver with the OrderClient
 	resolver := &graph.Resolver{
 		ProductClient: productClient,
 		UserClient:    userClient,
-		OrderClient:   orderClient, // Added OrderClient
+		OrderClient:   orderClient,
 	}
 
-	// Create the GraphQL server
 	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: resolver}))
 
-	// Set up HTTP handlers
-	http.Handle("/query", srv)
+	http.HandleFunc("/signup", authenticate.HandleGoogleAuth)
+	http.HandleFunc("/login", authenticate.HandleGoogleAuth)
+	http.HandleFunc("/auth/google/callback", authenticate.HandleGoogleCallback)
+	http.HandleFunc("/refresh", authenticate.HandleRefreshToken)
+	http.HandleFunc("/logout", authenticate.HandleLogout) // Add logout handler
+
+	http.Handle("/query", authenticate.JWTMiddleware(srv))
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)

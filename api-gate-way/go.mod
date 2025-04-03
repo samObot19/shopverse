@@ -7,14 +7,17 @@ toolchain go1.23.7
 require (
 	github.com/99designs/gqlgen v0.17.68
 	github.com/gin-gonic/gin v1.10.0
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
 	github.com/vektah/gqlparser/v2 v2.5.23
+	golang.org/x/oauth2 v0.25.0
 	google.golang.org/grpc v1.71.0
 	google.golang.org/protobuf v1.36.5
 )
 
 require (
+	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	github.com/agnivade/levenshtein v1.2.1 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
