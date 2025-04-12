@@ -61,6 +61,7 @@ func (uc *ProductUseCase) UpdateStock(ctx context.Context, id string, quantity i
     if quantity == 0 {
         return errors.New("quantity must not be zero")
     }
+
     return uc.repo.UpdateStock(ctx, id, quantity)
 }
 

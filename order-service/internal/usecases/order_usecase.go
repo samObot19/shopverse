@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	od "github.com/samObot19/shopverse/order-service/internal/events"
+	"github.com/samObot19/shopverse/order-service/internal/events/publish"
 	"github.com/samObot19/shopverse/order-service/internal/models"
 	"github.com/samObot19/shopverse/order-service/internal/repository"
 )
@@ -51,14 +51,16 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 
 	// Call repository to create the order
 	orderID, err := u.repo.CreateOrder(ctx, order)
+	fmt.Println("order created")
 	if err != nil {
 		log.Printf("Failed to create order: %v", err)
 		return 0, err
 	}
-	err = od.PublishOrderEvent(*order)
 
+	// Publish the order-created event to the orderCreated topic
+	err = publish.PublishEvent("orderCreated", *order)
 	if err != nil {
-		log.Printf("Failed to publish order event: %v", err)
+		log.Printf("Failed to publish order-created event: %v", err)
 		return 0, err
 	}
 

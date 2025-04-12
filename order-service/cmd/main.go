@@ -2,29 +2,19 @@ package main
 
 import (
     "log"
+    "net"
+
     "github.com/samObot19/shopverse/order-service/internal/config"
-    //"order-service/internal/events"
+    "github.com/samObot19/shopverse/order-service/internal/events/subscribe"
     "github.com/samObot19/shopverse/order-service/internal/repository"
     "github.com/samObot19/shopverse/order-service/internal/services"
     "github.com/samObot19/shopverse/order-service/internal/usecases"
     "github.com/samObot19/shopverse/order-service/proto/pb"
 
     "google.golang.org/grpc"
-    "net"
 )
 
 func main() {
-    // Load environment variables
-    // kafkaBroker := os.Getenv("KAFKA_BROKER")
-    // kafkaTopic := os.Getenv("KAFKA_TOPIC")
-
-    // // Initialize Kafka publisher
-    // kafkaPublisher, err := events.NewKafkaPublisher(kafkaBroker, kafkaTopic)
-    // if err != nil {
-    //     log.Fatalf("Failed to initialize Kafka publisher: %v", err)
-    // }
-    // defer kafkaPublisher.Close()
-
     // Initialize database connection
     db, err := config.InitDB(config.LoadDBConfig())
     if err != nil {
@@ -36,6 +26,12 @@ func main() {
     orderRepo := repository.NewOrderRepository(db)
     orderUsecase := usecases.NewOrderUsecase(orderRepo)
     orderService := services.NewOrderServiceServer(orderUsecase)
+
+    // Run the stockEvent subscriber in a separate goroutine
+    go func() {
+        log.Println("Starting stockEvent subscriber...")
+        subscribe.SubscribeAndProcessStockEvent(orderUsecase)
+    }()
 
     // Start gRPC server
     grpcServer := grpc.NewServer()
