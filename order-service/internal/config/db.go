@@ -7,10 +7,10 @@ import (
 	"os"
 	"github.com/joho/godotenv"
 
-	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/go-sql-driver/mysql" 
 )
 
-// DBConfig holds the database configuration details
+
 type DBConfig struct {
 	User     string
 	Password string
@@ -19,7 +19,7 @@ type DBConfig struct {
 	Name     string
 }
 
-// LoadDBConfig loads the database configuration from environment variables
+
 func LoadDBConfig() *DBConfig {
 	err := godotenv.Load()
     if err != nil {

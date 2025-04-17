@@ -8,6 +8,7 @@ import (
 	"github.com/samObot19/shopverse/order-service/internal/events/publish"
 	"github.com/samObot19/shopverse/order-service/internal/models"
 	"github.com/samObot19/shopverse/order-service/internal/repository"
+	"github.com/samObot19/shopverse/order-service/clients/product-client/proto/pb"
 )
 
 // OrderUsecase defines the interface for order-related business logic.
@@ -22,12 +23,16 @@ type OrderUsecase interface {
 
 // orderUsecase is a concrete implementation of the OrderUsecase interface.
 type orderUsecase struct {
-	repo repository.OrderRepository
+	repo          repository.OrderRepository
+	productClient pb.ProductServiceClient
 }
 
 // NewOrderUsecase creates a new instance of orderUsecase.
-func NewOrderUsecase(repo repository.OrderRepository) OrderUsecase {
-	return &orderUsecase{repo: repo}
+func NewOrderUsecase(repo repository.OrderRepository, productClient pb.ProductServiceClient) OrderUsecase {
+	return &orderUsecase{
+		repo:          repo,
+		productClient: productClient,
+	}
 }
 
 // CreateOrder handles the business logic for creating an order.
@@ -37,7 +42,25 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 		return 0, errors.New("order must contain at least one item")
 	}
 
-	// Calculate total amount
+	// Check stock availability for each order item
+	for _, item := range order.Items {
+		// Call GetProductByID RPC to get product details
+		productResponse, err := u.productClient.GetProductByID(ctx, &pb.GetProductByIDRequest{
+			Id: fmt.Sprintf("%d", item.ProductID),
+		})
+		if err != nil {
+			log.Printf("Failed to fetch product details for product ID %d: %v", item.ProductID, err)
+			return 0, fmt.Errorf("failed to fetch product details for product ID %d", item.ProductID)
+		}
+
+		// Check if stock is sufficient
+		product := productResponse.Product
+		if product.Stock < int32(item.Quantity) {
+			log.Printf("Insufficient stock for product ID %d: available %d, required %d", item.ProductID, product.Stock, item.Quantity)
+			return 0, fmt.Errorf("insufficient stock for product ID %d", item.ProductID)
+		}
+	}
+
 	var totalAmount float64
 	for _, item := range order.Items {
 		item.TotalPrice = item.ProductPrice * float64(item.Quantity)
@@ -45,11 +68,9 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 	}
 	order.TotalAmount = totalAmount
 
-	// Set default order and payment statuses
 	order.OrderStatus = "Pending"
 	order.PaymentStatus = "Unpaid"
 
-	// Call repository to create the order
 	orderID, err := u.repo.CreateOrder(ctx, order)
 	fmt.Println("order created")
 	if err != nil {
@@ -57,7 +78,6 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 		return 0, err
 	}
 
-	// Publish the order-created event to the orderCreated topic
 	err = publish.PublishEvent("orderCreated", *order)
 	if err != nil {
 		log.Printf("Failed to publish order-created event: %v", err)
@@ -67,7 +87,7 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 	return orderID, nil
 }
 
-// GetOrderByID handles the business logic for retrieving an order by its ID.
+
 func (u *orderUsecase) GetOrderByID(ctx context.Context, orderID uint) (*models.Order, error) {
 	order, err := u.repo.GetOrderByID(ctx, fmt.Sprintf("%d", orderID))
 	if err != nil {
@@ -80,9 +100,8 @@ func (u *orderUsecase) GetOrderByID(ctx context.Context, orderID uint) (*models.
 	return order, nil
 }
 
-// UpdateOrderStatus handles the business logic for updating the order status.
+
 func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID uint, status string) error {
-	// Validate status
 	validStatuses := []string{"Pending", "Processing", "Shipped", "Delivered", "Cancelled"}
 	isValid := false
 	for _, validStatus := range validStatuses {
@@ -95,7 +114,6 @@ func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID uint, stat
 		return errors.New("invalid order status")
 	}
 
-	// Call repository to update the status
 	err := u.repo.UpdateOrderStatus(ctx, fmt.Sprint("%d", orderID), status)
 	if err != nil {
 		log.Printf("Failed to update order status: %v", err)
@@ -104,9 +122,8 @@ func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID uint, stat
 	return nil
 }
 
-// UpdatePaymentStatus handles the business logic for updating the payment status.
+
 func (u *orderUsecase) UpdatePaymentStatus(ctx context.Context, orderID uint, status string) error {
-	// Validate status
 	validStatuses := []string{"Unpaid", "Paid", "Refunded"}
 	isValid := false
 	for _, validStatus := range validStatuses {
@@ -119,7 +136,6 @@ func (u *orderUsecase) UpdatePaymentStatus(ctx context.Context, orderID uint, st
 		return errors.New("invalid payment status")
 	}
 
-	// Call repository to update the payment status
 	err := u.repo.UpdatePaymentStatus(ctx, fmt.Sprintf("%d", orderID), status)
 	if err != nil {
 		log.Printf("Failed to update payment status: %v", err)
@@ -128,7 +144,6 @@ func (u *orderUsecase) UpdatePaymentStatus(ctx context.Context, orderID uint, st
 	return nil
 }
 
-// DeleteOrder handles the business logic for deleting an order.
 func (u *orderUsecase) DeleteOrder(ctx context.Context, orderID uint) error {
 	err := u.repo.DeleteOrder(ctx, fmt.Sprintf("%d",orderID))
 	if err != nil {
@@ -138,7 +153,7 @@ func (u *orderUsecase) DeleteOrder(ctx context.Context, orderID uint) error {
 	return nil
 }
 
-// GetAllOrders handles the business logic for retrieving all orders for a user.
+
 func (u *orderUsecase) GetAllOrders(ctx context.Context, userID uint) ([]*models.Order, error) {
 	orders, err := u.repo.GetAllOrders(ctx, userID)
 	if err != nil {

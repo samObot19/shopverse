@@ -18,7 +18,6 @@ const (
 
 // SubscribeAndProcessStockEvent subscribes to the stockEvent topic and publishes to the orderEvent topic
 func SubscribeAndProcessStockEvent(orderUsecase usecases.OrderUsecase) {
-    // Create a new Kafka consumer
     consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
         "bootstrap.servers": KafkaServer,
         "group.id":          GroupID,

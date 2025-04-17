@@ -18,7 +18,7 @@ type Order struct {
 type OrderItem struct {
     ID           uint    `json:"id"`
     OrderID      uint    `json:"order_id"`
-    ProductID    uint    `json:"product_id"`
+    ProductID    string  `json:"product_id"`
     ProductPrice float64 `json:"product_price"`
     Quantity     int     `json:"quantity"`
     TotalPrice   float64 `json:"total_price"`

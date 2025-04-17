@@ -100,7 +100,7 @@ message Order {
 
 message OrderItem {
   uint32 id = 1;
-  uint32 product_id = 2;
+  string product_id = 2;
   float product_price = 3;
   uint32 quantity = 4;
   float total_price = 5;

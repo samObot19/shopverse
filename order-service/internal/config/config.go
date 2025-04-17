@@ -11,6 +11,8 @@ type Config struct {
 	Port         string
 	DatabaseURL  string
 	JWTSecret    string
+	ProductPORT  string
+	OrderPORT  string
 }
 
 func LoadConfig() *Config {
@@ -23,6 +25,8 @@ func LoadConfig() *Config {
 		Port:         getEnv("PORT", "8080"),
 		DatabaseURL:  getEnv("DATABASE_URL", "postgres://user:password@localhost:5432/dbname"),
 		JWTSecret:    getEnv("JWT_SECRET", "your_jwt_secret"),
+		ProductPORT:  getEnv("PRODUCT_PORT", "8081"),
+		OrderPORT:    getEnv("ORDER_PORT", "8082"),
 	}
 }
 
