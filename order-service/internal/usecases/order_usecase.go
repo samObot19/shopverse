@@ -18,7 +18,7 @@ type OrderUsecase interface {
 	UpdateOrderStatus(ctx context.Context, orderID uint, status string) error
 	UpdatePaymentStatus(ctx context.Context, orderID uint, status string) error
 	DeleteOrder(ctx context.Context, orderID uint) error
-	GetAllOrders(ctx context.Context, userID uint) ([]*models.Order, error)
+	GetAllOrders(ctx context.Context, userID string) ([]*models.Order, error)
 }
 
 // orderUsecase is a concrete implementation of the OrderUsecase interface.
@@ -37,27 +37,23 @@ func NewOrderUsecase(repo repository.OrderRepository, productClient pb.ProductSe
 
 // CreateOrder handles the business logic for creating an order.
 func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (uint, error) {
-	// Validate order data
 	if len(order.Items) == 0 {
 		return 0, errors.New("order must contain at least one item")
 	}
 
-	// Check stock availability for each order item
 	for _, item := range order.Items {
-		// Call GetProductByID RPC to get product details
 		productResponse, err := u.productClient.GetProductByID(ctx, &pb.GetProductByIDRequest{
-			Id: fmt.Sprintf("%d", item.ProductID),
+			Id: item.ProductID,
 		})
 		if err != nil {
-			log.Printf("Failed to fetch product details for product ID %d: %v", item.ProductID, err)
-			return 0, fmt.Errorf("failed to fetch product details for product ID %d", item.ProductID)
+			log.Printf("Failed to fetch product details for product ID %s: %v", item.ProductID, err)
+			return 0, fmt.Errorf("failed to fetch product details for product ID %s", item.ProductID)
 		}
 
-		// Check if stock is sufficient
 		product := productResponse.Product
 		if product.Stock < int32(item.Quantity) {
-			log.Printf("Insufficient stock for product ID %d: available %d, required %d", item.ProductID, product.Stock, item.Quantity)
-			return 0, fmt.Errorf("insufficient stock for product ID %d", item.ProductID)
+			log.Printf("Insufficient stock for product ID %s: available %d, required %d", item.ProductID, product.Stock, item.Quantity)
+			return 0, fmt.Errorf("insufficient stock for product ID %s", item.ProductID)
 		}
 	}
 
@@ -72,7 +68,6 @@ func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (ui
 	order.PaymentStatus = "Unpaid"
 
 	orderID, err := u.repo.CreateOrder(ctx, order)
-	fmt.Println("order created")
 	if err != nil {
 		log.Printf("Failed to create order: %v", err)
 		return 0, err
@@ -114,7 +109,7 @@ func (u *orderUsecase) UpdateOrderStatus(ctx context.Context, orderID uint, stat
 		return errors.New("invalid order status")
 	}
 
-	err := u.repo.UpdateOrderStatus(ctx, fmt.Sprint("%d", orderID), status)
+	err := u.repo.UpdateOrderStatus(ctx, fmt.Sprintf("%d", orderID), status)
 	if err != nil {
 		log.Printf("Failed to update order status: %v", err)
 		return err
@@ -154,7 +149,7 @@ func (u *orderUsecase) DeleteOrder(ctx context.Context, orderID uint) error {
 }
 
 
-func (u *orderUsecase) GetAllOrders(ctx context.Context, userID uint) ([]*models.Order, error) {
+func (u *orderUsecase) GetAllOrders(ctx context.Context, userID string) ([]*models.Order, error) {
 	orders, err := u.repo.GetAllOrders(ctx, userID)
 	if err != nil {
 		log.Printf("Failed to retrieve orders: %v", err)

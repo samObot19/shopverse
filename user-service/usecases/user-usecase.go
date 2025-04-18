@@ -19,8 +19,8 @@ func NewUserUsecase(con repository.UserRepository) *UserUsecase{
 	}
 }
 
-func (s *UserUsecase) GetUser(username *string) (models.User, error) {
-	user, ok := s.db.ReadUser(*username)
+func (s *UserUsecase) GetUser(email *string) (models.User, error) {
+	user, ok := s.db.ReadUser(*email)
 
 	if !ok{
 		return models.User{}, errors.New("the user not found")

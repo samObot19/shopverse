@@ -97,8 +97,8 @@ The application is divided into several microservices, each handling specific fu
 ## Setup Instructions
 1. Clone the repository:
    ```bash
-   git clone <repository-url>
-   cd <repository-folder>
+   git clone https://github.com/samObot19/shopverse.git
+   cd shopverse
    ```
 
 2. Start Kafka and Redis servers:

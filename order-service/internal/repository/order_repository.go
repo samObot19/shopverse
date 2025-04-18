@@ -9,34 +9,33 @@ import (
 	"github.com/samObot19/shopverse/order-service/internal/models"
 )
 
-// OrderRepository defines the interface for order data access methods.
+
 type OrderRepository interface {
 	CreateOrder(ctx context.Context, order *models.Order) (uint, error)
 	GetOrderByID(ctx context.Context, orderID string) (*models.Order, error)
 	UpdateOrderStatus(ctx context.Context, orderID string, status string) error
 	UpdatePaymentStatus(ctx context.Context, orderID string, status string) error
 	DeleteOrder(ctx context.Context, orderID string) error
-	GetAllOrders(ctx context.Context, userID uint) ([]*models.Order, error)
+	GetAllOrders(ctx context.Context, userID string) ([]*models.Order, error)
 }
 
-// orderRepository is a concrete implementation of the OrderRepository interface.
+
 type orderRepository struct {
 	DB *sql.DB
 }
 
-// NewOrderRepository creates a new instance of orderRepository.
+
 func NewOrderRepository(db *sql.DB) OrderRepository {
 	return &orderRepository{DB: db}
 }
 
-// CreateOrder inserts a new order and its items into the database
+
 func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) (uint, error) {
 	tx, err := r.DB.Begin()
 	if err != nil {
 		return 0, err
 	}
 
-	// Insert order
 	query := `INSERT INTO orders (user_id, order_status, payment_status, total_amount, shipping_addr, billing_addr, created_at, updated_at)
               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 	result, err := tx.Exec(query, order.UserID, order.OrderStatus, order.PaymentStatus, order.TotalAmount, order.ShippingAddr, order.BillingAddr, time.Now(), time.Now())
@@ -51,7 +50,7 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 		return 0, err
 	}
 
-	// Insert order items
+	
 	for _, item := range order.Items {
 		itemQuery := `INSERT INTO order_items (order_id, product_id, product_price, quantity, total_price)
                       VALUES (?, ?, ?, ?, ?)`
@@ -70,9 +69,8 @@ func (r *orderRepository) CreateOrder(ctx context.Context, order *models.Order) 
 	return uint(orderID), nil
 }
 
-// GetOrderByID retrieves an order by its ID, including its items
+
 func (r *orderRepository) GetOrderByID(ctx context.Context, orderID string) (*models.Order, error) {
-	// Fetch order
 	query := `SELECT id, user_id, order_status, payment_status, total_amount, shipping_addr, billing_addr, created_at, updated_at
               FROM orders WHERE id = ?`
 	row := r.DB.QueryRow(query, orderID)
@@ -86,7 +84,7 @@ func (r *orderRepository) GetOrderByID(ctx context.Context, orderID string) (*mo
 		return nil, err
 	}
 
-	// Fetch order items
+	
 	itemQuery := `SELECT id, order_id, product_id, product_price, quantity, total_price FROM order_items WHERE order_id = ?`
 	rows, err := r.DB.Query(itemQuery, orderID)
 	if err != nil {
@@ -108,21 +106,21 @@ func (r *orderRepository) GetOrderByID(ctx context.Context, orderID string) (*mo
 	return &order, nil
 }
 
-// UpdateOrderStatus updates the status of an order
+
 func (r *orderRepository) UpdateOrderStatus(ctx context.Context, orderID string, status string) error {
 	query := `UPDATE orders SET order_status = ?, updated_at = ? WHERE id = ?`
 	_, err := r.DB.Exec(query, status, time.Now(), orderID)
 	return err
 }
 
-// UpdatePaymentStatus updates the payment status of an order
+
 func (r *orderRepository) UpdatePaymentStatus(ctx context.Context, orderID string, status string) error {
 	query := `UPDATE orders SET payment_status = ?, updated_at = ? WHERE id = ?`
 	_, err := r.DB.Exec(query, status, time.Now(), orderID)
 	return err
 }
 
-// DeleteOrder deletes an order and its items
+
 func (r *orderRepository) DeleteOrder(ctx context.Context, orderID string) error {
 	query := `DELETE FROM orders WHERE id = ?`
 	_, err := r.DB.Exec(query, orderID)
@@ -130,7 +128,7 @@ func (r *orderRepository) DeleteOrder(ctx context.Context, orderID string) error
 }
 
 // GetAllOrders retrieves all orders for a specific user
-func (r *orderRepository) GetAllOrders(ctx context.Context, userID uint) ([]*models.Order, error) {
+func (r *orderRepository) GetAllOrders(ctx context.Context, userID string) ([]*models.Order, error) {
 	query := `SELECT id, user_id, order_status, payment_status, total_amount, shipping_addr, billing_addr, created_at, updated_at
               FROM orders WHERE user_id = ?`
 	rows, err := r.DB.QueryContext(ctx, query, userID)

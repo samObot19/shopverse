@@ -75,9 +75,9 @@ func (s *MongoUserRepo) NumberOfUsers() (int64, error) {
 }
 
 
-func (s *MongoUserRepo) ReadUser(username string) (models.User, bool) {
+func (s *MongoUserRepo) ReadUser(email string) (models.User, bool) {
 	var result models.User
-	err := s.Collection.FindOne(context.TODO(), bson.M{"name": username}).Decode(&result)
+	err := s.Collection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&result)
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {

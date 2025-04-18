@@ -14,7 +14,7 @@ type UserEventProducer struct {
     topic    string
 }
 
-// NewUserEventProducer initializes a new Kafka producer for user events
+
 func NewUserEventProducer(broker, topic string) (*UserEventProducer, error) {
     producer, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": broker})
     if err != nil {
@@ -29,7 +29,6 @@ func NewUserEventProducer(broker, topic string) (*UserEventProducer, error) {
 
 // PublishUserCreatedEvent publishes a "user created" event to Kafka
 func (p *UserEventProducer) PublishUserCreatedEvent(user *models.User) error {
-    // Serialize the user object to JSON
     message, err := json.Marshal(user)
     if err != nil {
         return fmt.Errorf("failed to serialize user: %w", err)
