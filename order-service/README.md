@@ -30,29 +30,16 @@ order-service
 
 ## Setup Instructions
 
-1. **Clone the repository:**
-   ```
-   git clone <repository-url>
-   cd order-service
-   ```
-
-2. **Install dependencies:**
+1. **Install dependencies:**
    ```
    go mod tidy
    ```
 
-3. **Configure the application:**
-   Update the configuration settings in `internal/config/config.go` as needed.
-
-4. **Run the application:**
+2. **Run the application:**
    ```
    go run cmd/main.go
    ```
 
-## Usage
-
-- The Order Service exposes HTTP endpoints for managing orders. You can use tools like Postman or curl to interact with these endpoints.
-- Refer to the `internal/handlers/order_handler.go` file for the list of available endpoints and their usage.
 
 ## Contributing
 

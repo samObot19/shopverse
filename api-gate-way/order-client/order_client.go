@@ -21,7 +21,7 @@ func NewOrderClient(conn *grpc.ClientConn) *OrderClient {
 }
 
 // CreateOrder calls the CreateOrder gRPC method
-func (oc *OrderClient) CreateOrder(ctx context.Context, userID uint32, items []*pb.OrderItem, shippingAddress, billingAddress string) (*pb.CreateOrderResponse, error) {
+func (oc *OrderClient) CreateOrder(ctx context.Context, userID string, items []*pb.OrderItem, shippingAddress, billingAddress string) (*pb.CreateOrderResponse, error) {
 	req := &pb.CreateOrderRequest{
 		UserId:          userID,
 		Items:           items,
@@ -95,7 +95,7 @@ func (oc *OrderClient) DeleteOrder(ctx context.Context, orderID uint32) (*pb.Del
 }
 
 // GetAllOrders calls the GetAllOrders gRPC method
-func (oc *OrderClient) GetAllOrders(ctx context.Context, userID uint32) ([]*pb.Order, error) {
+func (oc *OrderClient) GetAllOrders(ctx context.Context, userID string) ([]*pb.Order, error) {
 	req := &pb.GetAllOrdersRequest{
 		UserId: userID,
 	}

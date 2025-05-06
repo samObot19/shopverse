@@ -116,24 +116,11 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input model.OrderInp
 	orderItems := []*pb.OrderItem{}
 	for _, item := range input.Items {
 		orderItems = append(orderItems, &pb.OrderItem{
-			ProductId: func() uint32 {
-				id, err := strconv.ParseUint(item.ProductID, 10, 32)
-				if err != nil {
-					log.Printf("Error parsing ProductID to uint32: %v", err)
-					return 0
-				}
-				return uint32(id)
-			}(),
+			ProductId: item.ProductID,
 			ProductPrice: float32(item.ProductPrice),
 			Quantity:     uint32(item.Quantity),
 			TotalPrice:   float32(item.TotalPrice),
 		})
-	}
-
-	userIDUint, err := strconv.ParseUint(input.UserID, 10, 32)
-	if err != nil {
-		log.Printf("Error parsing UserID to uint32: %v", err)
-		return "", fmt.Errorf("invalid UserID format: %w", err)
 	}
 
 	protoOrderItems := []*pb.OrderItem{}
@@ -145,8 +132,8 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input model.OrderInp
 			TotalPrice:   item.TotalPrice,
 		})
 	}
-
-	resp, err := r.Resolver.OrderClient.CreateOrder(ctx, uint32(userIDUint), protoOrderItems, input.ShippingAddress, input.BillingAddress)
+	userID := input.UserID
+	resp, err := r.Resolver.OrderClient.CreateOrder(ctx, userID, protoOrderItems, input.ShippingAddress, input.BillingAddress)
 	if err != nil {
 		log.Printf("Error creating order: %v", err)
 		return "", fmt.Errorf("failed to create order: %w", err)
@@ -329,12 +316,7 @@ func (r *queryResolver) GetOrderByID(ctx context.Context, orderID string) (*mode
 
 // GetAllOrders is the resolver for the getAllOrders query.
 func (r *queryResolver) GetAllOrders(ctx context.Context, userID string) ([]*model.Order, error) {
-	userIDUint, err := strconv.ParseUint(userID, 10, 32)
-	if err != nil {
-		log.Printf("Error parsing userID to uint32: %v", err)
-		return nil, fmt.Errorf("invalid userID format: %w", err)
-	}
-	orders, err := r.Resolver.OrderClient.GetAllOrders(ctx, uint32(userIDUint))
+	orders, err := r.Resolver.OrderClient.GetAllOrders(ctx, userID)
 	if err != nil {
 		log.Printf("Error fetching all orders: %v", err)
 		return nil, fmt.Errorf("failed to fetch all orders: %w", err)

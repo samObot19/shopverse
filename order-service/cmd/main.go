@@ -5,7 +5,6 @@ import (
     "net"
 
     "github.com/samObot19/shopverse/order-service/internal/config"
-    // "github.com/samObot19/shopverse/order-service/internal/events/subscribe"
     "github.com/samObot19/shopverse/order-service/internal/repository"
     "github.com/samObot19/shopverse/order-service/internal/services"
     "github.com/samObot19/shopverse/order-service/internal/usecases"
@@ -35,11 +34,6 @@ func main() {
 
     orderUsecase := usecases.NewOrderUsecase(orderRepo, productClient)
     orderService := services.NewOrderServiceServer(orderUsecase)
-
-    // go func() {
-    //     log.Println("Starting stockEvent subscriber...")
-    //     subscribe.SubscribeAndProcessStockEvent(orderUsecase)
-    // }()
 
     grpcServer := grpc.NewServer()
     orderpb.RegisterOrderServiceServer(grpcServer, orderService)

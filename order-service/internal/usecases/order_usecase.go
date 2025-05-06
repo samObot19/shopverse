@@ -11,7 +11,7 @@ import (
 	"github.com/samObot19/shopverse/order-service/clients/product-client/proto/pb"
 )
 
-// OrderUsecase defines the interface for order-related business logic.
+
 type OrderUsecase interface {
 	CreateOrder(ctx context.Context, order *models.Order) (uint, error)
 	GetOrderByID(ctx context.Context, orderID uint) (*models.Order, error)
@@ -21,13 +21,13 @@ type OrderUsecase interface {
 	GetAllOrders(ctx context.Context, userID string) ([]*models.Order, error)
 }
 
-// orderUsecase is a concrete implementation of the OrderUsecase interface.
+
 type orderUsecase struct {
 	repo          repository.OrderRepository
 	productClient pb.ProductServiceClient
 }
 
-// NewOrderUsecase creates a new instance of orderUsecase.
+
 func NewOrderUsecase(repo repository.OrderRepository, productClient pb.ProductServiceClient) OrderUsecase {
 	return &orderUsecase{
 		repo:          repo,
@@ -35,7 +35,7 @@ func NewOrderUsecase(repo repository.OrderRepository, productClient pb.ProductSe
 	}
 }
 
-// CreateOrder handles the business logic for creating an order.
+
 func (u *orderUsecase) CreateOrder(ctx context.Context, order *models.Order) (uint, error) {
 	if len(order.Items) == 0 {
 		return 0, errors.New("order must contain at least one item")
